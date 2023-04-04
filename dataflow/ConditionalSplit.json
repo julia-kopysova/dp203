@@ -1,0 +1,76 @@
+{
+	"name": "ConditionalSplit",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "LogSourceTime",
+						"type": "DatasetReference"
+					},
+					"name": "LogStream"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "LogDataDtFromJson",
+						"type": "DatasetReference"
+					},
+					"name": "ResoucesGroupSplit"
+				}
+			],
+			"transformations": [
+				{
+					"name": "ConditionalSplitResourceGroup"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Id as string,",
+				"          Correlationid as string,",
+				"          Operationname as string,",
+				"          Status as string,",
+				"          Eventcategory as string,",
+				"          Level as string,",
+				"          Time as string,",
+				"          Subscription as string,",
+				"          Eventinitiatedby as string,",
+				"          Resourcetype as string,",
+				"          Resourcegroup as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> LogStream",
+				"LogStream split(Resourcegroup=='new-grp',",
+				"     disjoint: false) ~> ConditionalSplitResourceGroup@(newgrpstream, allothergroups)",
+				"ConditionalSplitResourceGroup@newgrpstream sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          Id as integer,",
+				"          Correlationid as string,",
+				"          Operationname as string,",
+				"          Status as string,",
+				"          Eventcategory as string,",
+				"          Level as string,",
+				"          Time as timestamp,",
+				"          Subscription as string,",
+				"          Eventinitiatedby as string,",
+				"          Resourcetype as string,",
+				"          Resourcegroup as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> ResoucesGroupSplit"
+			]
+		}
+	}
+}

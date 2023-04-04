@@ -1,0 +1,324 @@
+{
+	"name": "Dimensionflow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Customer",
+						"type": "DatasetReference"
+					},
+					"name": "Customer"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1",
+						"type": "DatasetReference"
+					},
+					"name": "Store"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductDt",
+						"type": "DatasetReference"
+					},
+					"name": "ProductStream"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductModelDt",
+						"type": "DatasetReference"
+					},
+					"name": "ProductModelStream"
+				},
+				{
+					"dataset": {
+						"referenceName": "ProductSubcategoryDt",
+						"type": "DatasetReference"
+					},
+					"name": "ProductSubcategoryStream"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimProductMAXProductSK",
+						"type": "DatasetReference"
+					},
+					"name": "DimProductStream"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimProductSynapseAll",
+						"type": "DatasetReference"
+					},
+					"name": "DimProductSynapseAll"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSynapseAnalyticsTable2",
+						"type": "DatasetReference"
+					},
+					"name": "DimCustomer"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimProductDt",
+						"type": "DatasetReference"
+					},
+					"name": "DimensionProductStream"
+				},
+				{
+					"name": "ProductSKCache"
+				}
+			],
+			"transformations": [
+				{
+					"name": "CustomerJOINStore"
+				},
+				{
+					"name": "SelectColumns"
+				},
+				{
+					"name": "RemoveNULLs"
+				},
+				{
+					"name": "ProductJOINProductModel"
+				},
+				{
+					"name": "ProductJOINCategory"
+				},
+				{
+					"name": "SelectColumsProduct"
+				},
+				{
+					"name": "RemoveNullsProduct"
+				},
+				{
+					"name": "SurrogateKey"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "DimProductExists"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CustomerID as integer,",
+				"          PersonID as integer,",
+				"          StoreID as integer,",
+				"          TerritoryID as integer,",
+				"          AccountNumber as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> Customer",
+				"source(output(",
+				"          BusinessEntityID as integer,",
+				"          Name as string,",
+				"          SalesPersonID as integer,",
+				"          Demographics as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> Store",
+				"source(output(",
+				"          ProductID as integer,",
+				"          Name as string,",
+				"          ProductNumber as string,",
+				"          MakeFlag as boolean,",
+				"          FinishedGoodsFlag as boolean,",
+				"          Color as string,",
+				"          SafetyStockLevel as integer,",
+				"          ReorderPoint as integer,",
+				"          StandardCost as decimal(19,4),",
+				"          ListPrice as decimal(19,4),",
+				"          Size as string,",
+				"          SizeUnitMeasureCode as string,",
+				"          WeightUnitMeasureCode as string,",
+				"          Weight as decimal(8,2),",
+				"          DaysToManufacture as integer,",
+				"          ProductLine as string,",
+				"          Class as string,",
+				"          Style as string,",
+				"          ProductSubcategoryID as integer,",
+				"          ProductModelID as integer,",
+				"          SellStartDate as timestamp,",
+				"          SellEndDate as timestamp,",
+				"          DiscontinuedDate as timestamp,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> ProductStream",
+				"source(output(",
+				"          ProductModelID as integer,",
+				"          Name as string,",
+				"          CatalogDescription as string,",
+				"          Instructions as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> ProductModelStream",
+				"source(output(",
+				"          ProductSubcategoryID as integer,",
+				"          ProductCategoryID as integer,",
+				"          Name as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> ProductSubcategoryStream",
+				"source(output(",
+				"          ProductSK as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT MAX([ProductSK]) AS ProductSK FROM [dbo].[DimProduct]',",
+				"     format: 'query',",
+				"     staged: true) ~> DimProductStream",
+				"source(output(",
+				"          ProductSK as integer,",
+				"          ProductID as integer,",
+				"          ProductModelID as integer,",
+				"          ProductSubcategoryID as integer,",
+				"          ProductName as string,",
+				"          SafetyStockLevel as integer,",
+				"          ProductModelName as string,",
+				"          ProductSubCategoryName as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table',",
+				"     staged: true) ~> DimProductSynapseAll",
+				"Customer, Store join(StoreID == BusinessEntityID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> CustomerJOINStore",
+				"CustomerJOINStore select(mapColumn(",
+				"          CustomerID,",
+				"          BusinessEntityID,",
+				"          Name,",
+				"          StoreID",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectColumns",
+				"SelectColumns alterRow(deleteIf(isNull(BusinessEntityID))) ~> RemoveNULLs",
+				"ProductStream, ProductModelStream join(ProductStream@ProductModelID == ProductModelStream@ProductModelID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> ProductJOINProductModel",
+				"ProductJOINProductModel, ProductSubcategoryStream join(ProductStream@ProductSubcategoryID == ProductSubcategoryStream@ProductSubcategoryID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> ProductJOINCategory",
+				"ProductJOINCategory select(mapColumn(",
+				"          ProductID,",
+				"          ProductName = ProductStream@Name,",
+				"          SafetyStockLevel,",
+				"          ProductSubcategoryID = ProductStream@ProductSubcategoryID,",
+				"          ProductModelID = ProductStream@ProductModelID,",
+				"          ProductModelName = ProductModelStream@Name,",
+				"          ProductSubCategoryName = ProductSubcategoryStream@Name",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> SelectColumsProduct",
+				"SelectColumsProduct alterRow(deleteIf(isNull(ProductModelID))) ~> RemoveNullsProduct",
+				"DimProductExists keyGenerate(output(ProductSK as long),",
+				"     startAt: 1L,",
+				"     stepValue: 1L) ~> SurrogateKey",
+				"SurrogateKey derive(ProductSK = ProductSK + (iifNull((ProductSKCache#outputs()[1].ProductSK),0))) ~> derivedColumn1",
+				"RemoveNullsProduct, DimProductSynapseAll exists(SelectColumsProduct@ProductID == DimProductSynapseAll@ProductID,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> DimProductExists",
+				"RemoveNULLs sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CustomerID as integer,",
+				"          StoreID as integer,",
+				"          BusinessEntityID as integer,",
+				"          StoreName as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CustomerID,",
+				"          StoreID,",
+				"          BusinessEntityID,",
+				"          StoreName = Name",
+				"     )) ~> DimCustomer",
+				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ProductSK as integer,",
+				"          ProductID as integer,",
+				"          ProductModelID as integer,",
+				"          ProductSubcategoryID as integer,",
+				"          ProductName as string,",
+				"          SafetyStockLevel as integer,",
+				"          ProductModelName as string,",
+				"          ProductSubCategoryName as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          ProductID,",
+				"          ProductModelID,",
+				"          ProductSubcategoryID,",
+				"          ProductName,",
+				"          SafetyStockLevel,",
+				"          ProductModelName,",
+				"          ProductSubCategoryName,",
+				"          ProductSK",
+				"     )) ~> DimensionProductStream",
+				"DimProductStream sink(validateSchema: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     store: 'cache',",
+				"     format: 'inline',",
+				"     output: false,",
+				"     saveOrder: 1,",
+				"     mapColumn(",
+				"          ProductSK",
+				"     )) ~> ProductSKCache"
+			]
+		}
+	}
+}

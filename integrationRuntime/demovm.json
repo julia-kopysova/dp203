@@ -1,0 +1,6 @@
+{
+	"name": "demovm",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}
